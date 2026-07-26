@@ -43,6 +43,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def add_task(db_path: Path, title: str) -> None:
+    if not title.strip():
+        raise SystemExit("Task title must not be blank")
+
     tasks = load_tasks(db_path)
     next_id = max((task["id"] for task in tasks), default=0) + 1
     task = {"id": next_id, "title": title, "done": False}

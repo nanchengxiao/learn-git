@@ -39,6 +39,8 @@ def build_parser() -> argparse.ArgumentParser:
     add_parser = subparsers.add_parser("add", help="Add a task")
     add_parser.add_argument("title")
     subparsers.add_parser("list", help="List tasks")
+    done_parser = subparsers.add_parser("done", help="Complete a task")
+    done_parser.add_argument("task_id", type=int)
     return parser
 
 
@@ -54,6 +56,18 @@ def add_task(db_path: Path, title: str) -> None:
     print(f"Added task {next_id}: {title}")
 
 
+def complete_task(db_path: Path, task_id: int) -> None:
+    tasks = load_tasks(db_path)
+    for task in tasks:
+        if task["id"] == task_id:
+            task["done"] = True
+            save_tasks(db_path, tasks)
+            print(f'Completed task {task_id}: {task["title"]}')
+            return
+
+    raise SystemExit(f"Task {task_id} not found")
+
+
 def main() -> None:
     args = build_parser().parse_args()
     if args.command == "add":
@@ -61,6 +75,9 @@ def main() -> None:
         return
     if args.command == "list":
         list_tasks(args.db)
+        return
+    if args.command == "done":
+        complete_task(args.db, args.task_id)
         return
 
     raise SystemExit(f"unsupported command: {args.command}")

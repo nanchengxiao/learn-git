@@ -20,6 +20,17 @@ def save_tasks(db_path: Path, tasks: list[dict]) -> None:
     )
 
 
+def list_tasks(db_path: Path) -> None:
+    tasks = load_tasks(db_path)
+    if not tasks:
+        print("No tasks")
+        return
+
+    for task in tasks:
+        marker = "x" if task["done"] else " "
+        print(f'[{marker}] {task["id"]}: {task["title"]}')
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="A tiny task manager")
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
@@ -27,6 +38,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     add_parser = subparsers.add_parser("add", help="Add a task")
     add_parser.add_argument("title")
+    subparsers.add_parser("list", help="List tasks")
     return parser
 
 
@@ -43,6 +55,9 @@ def main() -> None:
     args = build_parser().parse_args()
     if args.command == "add":
         add_task(args.db, args.title)
+        return
+    if args.command == "list":
+        list_tasks(args.db)
         return
 
     raise SystemExit(f"unsupported command: {args.command}")

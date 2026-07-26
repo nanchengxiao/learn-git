@@ -35,12 +35,30 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="A tiny task manager")
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
     subparsers = parser.add_subparsers(dest="command", required=True)
+
+    add_parser = subparsers.add_parser("add", help="Add a task")
+    add_parser.add_argument("title")
     subparsers.add_parser("list", help="List tasks")
     return parser
 
 
+def add_task(db_path: Path, title: str) -> None:
+    if not title.strip():
+        raise SystemExit("Task title must not be blank")
+
+    tasks = load_tasks(db_path)
+    next_id = max((task["id"] for task in tasks), default=0) + 1
+    task = {"id": next_id, "title": title, "done": False}
+    tasks.append(task)
+    save_tasks(db_path, tasks)
+    print(f"Added task {next_id}: {title}")
+
+
 def main() -> None:
     args = build_parser().parse_args()
+    if args.command == "add":
+        add_task(args.db, args.title)
+        return
     if args.command == "list":
         list_tasks(args.db)
         return

@@ -20,15 +20,66 @@ def save_tasks(db_path: Path, tasks: list[dict]) -> None:
     )
 
 
+def list_tasks(db_path: Path) -> None:
+    tasks = load_tasks(db_path)
+    if not tasks:
+        print("No tasks")
+        return
+
+    for task in tasks:
+        marker = "x" if task["done"] else " "
+        print(f'[{marker}] {task["id"]}: {task["title"]}')
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="A tiny task manager")
     parser.add_argument("--db", type=Path, default=DEFAULT_DB)
-    parser.add_subparsers(dest="command", required=True)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    add_parser = subparsers.add_parser("add", help="Add a task")
+    add_parser.add_argument("title")
+    subparsers.add_parser("list", help="List tasks")
+    done_parser = subparsers.add_parser("done", help="Complete a task")
+    done_parser.add_argument("task_id", type=int)
     return parser
+
+
+def add_task(db_path: Path, title: str) -> None:
+    if not title.strip():
+        raise SystemExit("Task title must not be blank")
+
+    tasks = load_tasks(db_path)
+    next_id = max((task["id"] for task in tasks), default=0) + 1
+    task = {"id": next_id, "title": title, "done": False}
+    tasks.append(task)
+    save_tasks(db_path, tasks)
+    print(f"Added task {next_id}: {title}")
+
+
+def complete_task(db_path: Path, task_id: int) -> None:
+    tasks = load_tasks(db_path)
+    for task in tasks:
+        if task["id"] == task_id:
+            task["done"] = True
+            save_tasks(db_path, tasks)
+            print(f'Completed task {task_id}: {task["title"]}')
+            return
+
+    raise SystemExit(f"Task {task_id} not found")
 
 
 def main() -> None:
     args = build_parser().parse_args()
+    if args.command == "add":
+        add_task(args.db, args.title)
+        return
+    if args.command == "list":
+        list_tasks(args.db)
+        return
+    if args.command == "done":
+        complete_task(args.db, args.task_id)
+        return
+
     raise SystemExit(f"unsupported command: {args.command}")
 
 
